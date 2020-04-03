@@ -10,6 +10,8 @@ uniform float iTime;
 
 uniform vec3 eye_position;
 uniform vec3 look_point;
+uniform int fractal_index;
+
 
 // =========================
 // ======= CONSTANTS =======
@@ -318,7 +320,12 @@ vec4 scene_sdf(vec3 point) {
     // Scaling: sdf(point / scaling_factor) * scaling_factor
     // Rotation: new_point = (inverse_mat4(rotate_A(angle)) * vec4(point, 1.0)).xyz
 
-    return mandlebulb(point);
+    if (fractal_index == 0) {
+        return mandlebulb(point);
+        
+    } else if (fractal_index == 1) {
+        return sierpinski_tetrahedron(point);
+    }
 }
 
 // Ray-March Algorithm

@@ -15,13 +15,19 @@ export default class Renderer {
         this.camera = new Camera();
     }
 
+    set_fractal(fractal_name) {
+        this.fractal_index = [
+            "Mandlebulb",
+            "Sierpinski"
+
+        ].indexOf(fractal_name);
+    }
+
     // Rendering
-    render_loop() {
+    render_loop(fractal_name) {
         this.pre_render();
         this.render();
         window.setTimeout(() => this.render_loop(), 1000 / 60);
-
-        this.camera.update();
     }
 
     pre_render() {
@@ -36,6 +42,8 @@ export default class Renderer {
         
         this.gl.clearColor(0, 0, 0, 1);
         this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
+
+        this.camera.update();
     }
 
     render() {
@@ -47,6 +55,7 @@ export default class Renderer {
         this.gl.uniform1f(this.program.uniforms.time, time_delta);
         this.gl.uniform3fv(this.program.uniforms.eye, this.camera.position);
         this.gl.uniform3fv(this.program.uniforms.look_point, this.camera.get_looking_at_point());
+        this.gl.uniform1i(this.program.uniforms.fractal_index, this.fractal_index);
 
         this.image.render(this.program);
     }

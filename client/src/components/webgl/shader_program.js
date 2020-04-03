@@ -22,7 +22,8 @@ export default class Program {
             resolution: this.gl.getUniformLocation(this.program, 'iResolution'),
             time: this.gl.getUniformLocation(this.program, 'iTime'),
             eye: this.gl.getUniformLocation(this.program, 'eye_position'),
-            look_point: this.gl.getUniformLocation(this.program, 'look_point')
+            look_point: this.gl.getUniformLocation(this.program, 'look_point'),
+            fractal_index: this.gl.getUniformLocation(this.program, 'fractal_index')
         };
     }
 

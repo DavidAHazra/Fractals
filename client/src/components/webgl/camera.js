@@ -45,10 +45,6 @@ export default class Camera {
     set_speed(new_speed) {
         const constant_modifier = 0.1;
         this.speed = new_speed * constant_modifier;
-
-        if (this.speed < this.MIN_SPEED) {
-            this.speed = this.MIN_SPEED;
-        }
     }
 
     get_look_direction() {

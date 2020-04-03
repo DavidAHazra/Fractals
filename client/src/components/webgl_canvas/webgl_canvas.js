@@ -12,10 +12,6 @@ export default class WebGLCanvas extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {
-
-        };
-
         this.container_ref = React.createRef();
         this.canvas_ref = React.createRef();
     }
@@ -35,8 +31,13 @@ export default class WebGLCanvas extends React.Component {
         window.addEventListener('resize', () => this.resize_canvas(gl_context));
 
         // Render
-        const r = new Renderer(this.canvas_ref.current, gl_context);
-        r.render_loop();
+        this.renderer = new Renderer(this.canvas_ref.current, gl_context);
+        this.renderer.set_fractal(this.props.fractal);
+        this.renderer.render_loop();
+    }
+
+    componentDidUpdate() {
+        this.renderer.set_fractal(this.props.fractal);
     }
 
     resize_canvas(context) {
