@@ -11,58 +11,17 @@ uniform float iTime;
 uniform vec3 eye_position;
 uniform vec3 look_point;
 uniform int fractal_index;
-
+uniform int colouring_index;
 
 // =========================
 // ======= CONSTANTS =======
 // =========================
-#define MAX_STEPS 1000
+#define MAX_STEPS 250
 #define MIN_DISTANCE 0.0
-#define MAX_DISTANCE 9999999.0
+#define MAX_DISTANCE 1000.0
 #define EPSILON 0.0001
 #define PI 3.1415926535
-
-mat4 inverse_mat4(mat4 m) {
-    float
-    a00 = m[0][0], a01 = m[0][1], a02 = m[0][2], a03 = m[0][3],
-    a10 = m[1][0], a11 = m[1][1], a12 = m[1][2], a13 = m[1][3],
-    a20 = m[2][0], a21 = m[2][1], a22 = m[2][2], a23 = m[2][3],
-    a30 = m[3][0], a31 = m[3][1], a32 = m[3][2], a33 = m[3][3],
-
-    b00 = a00 * a11 - a01 * a10,
-    b01 = a00 * a12 - a02 * a10,
-    b02 = a00 * a13 - a03 * a10,
-    b03 = a01 * a12 - a02 * a11,
-    b04 = a01 * a13 - a03 * a11,
-    b05 = a02 * a13 - a03 * a12,
-    b06 = a20 * a31 - a21 * a30,
-    b07 = a20 * a32 - a22 * a30,
-    b08 = a20 * a33 - a23 * a30,
-    b09 = a21 * a32 - a22 * a31,
-    b10 = a21 * a33 - a23 * a31,
-    b11 = a22 * a33 - a23 * a32,
-
-    det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-
-    return mat4(
-        a11 * b11 - a12 * b10 + a13 * b09,
-        a02 * b10 - a01 * b11 - a03 * b09,
-        a31 * b05 - a32 * b04 + a33 * b03,
-        a22 * b04 - a21 * b05 - a23 * b03,
-        a12 * b08 - a10 * b11 - a13 * b07,
-        a00 * b11 - a02 * b08 + a03 * b07,
-        a32 * b02 - a30 * b05 - a33 * b01,
-        a20 * b05 - a22 * b02 + a23 * b01,
-        a10 * b10 - a11 * b08 + a13 * b06,
-        a01 * b08 - a00 * b10 - a03 * b06,
-        a30 * b04 - a31 * b02 + a33 * b00,
-        a21 * b02 - a20 * b04 - a23 * b00,
-        a11 * b07 - a10 * b09 - a12 * b06,
-        a00 * b09 - a01 * b07 + a02 * b06,
-        a31 * b01 - a30 * b03 - a32 * b00,
-        a20 * b03 - a21 * b01 + a22 * b00
-    ) / det;
-}
+const vec3 SUN_POSITION = vec3(0.0, 15.0, 0.0);
 
 
 vec3 custom_modulus(vec3 vector, float operator) {
@@ -254,7 +213,7 @@ vec4 sierpinski_tetrahedron(vec3 point) {
     float time = iTime / 2.0;
     vec3 orbit = vec3(1e20);
 
-    for (int i = 0; i < 20; ++i) {
+    for (int i = 0; i < 15; ++i) {
         sierpinskiFold(p);
 
         orbit = min(orbit, abs(p.xyz));
@@ -270,8 +229,6 @@ vec4 sierpinski_tetrahedron(vec3 point) {
 vec4 mandlebulb(vec3 point) {
     vec3 orbit = vec3(1e20);
 
-
-
     vec3 z = point;
     float r = 0.0;
 
@@ -280,7 +237,7 @@ vec4 mandlebulb(vec3 point) {
     float bailout = 2.0;
 
     int iterations = 0;
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 20; i++) {
         iterations = i;
         
         r = length(z);
@@ -312,6 +269,27 @@ vec4 mandlebulb(vec3 point) {
     return vec4(orbit, d);
 }
 
+vec4 mandlebox(vec3 point) {
+    vec3 orbit = vec3(1e20);
+
+    vec4 p = vec4(point, 1.0);
+
+    for (int i = 0; i < 20; i++) {
+        boxFold(p, vec3(1.0));
+        sphereFold(p, 0.5, 1.0);
+
+        p *= 2.0;
+        p.w = abs(p.w);
+        p.xyz += point;
+
+        // Orbit
+        orbit = min(orbit, abs(p.xyz));
+    }
+
+    float d = box_sdf(p, vec3(0.0), vec3(6.0));
+    return vec4(orbit, d);
+}
+
 
 vec4 scene_sdf(vec3 point) {
     // Returns vec4(colour, ..., ..., distance)
@@ -320,17 +298,29 @@ vec4 scene_sdf(vec3 point) {
     // Scaling: sdf(point / scaling_factor) * scaling_factor
     // Rotation: new_point = (inverse_mat4(rotate_A(angle)) * vec4(point, 1.0)).xyz
 
+    float sun_sdf = sphere_sdf(vec4(point, 1.0), SUN_POSITION +vec3(0.0, 5.0, 0.0), 2.0);
+
+    vec4 shape_sdf = vec4(0.0);
     if (fractal_index == 0) {
-        return mandlebulb(point);
-        
+        shape_sdf = mandlebox(point);
+
     } else if (fractal_index == 1) {
-        return sierpinski_tetrahedron(point);
+        shape_sdf = mandlebulb(point);
+        
+    } else if (fractal_index == 2) {
+        shape_sdf = sierpinski_tetrahedron(point);
+        
+    } else if (fractal_index == 3) {
+        shape_sdf = tree_block(point);
     }
+    
+    vec4 final = vec4(shape_sdf.xyz, sdf_union(shape_sdf.w, sun_sdf));
+    return final;
 }
 
 // Ray-March Algorithm
 vec2 ray_march(vec3 eye, vec3 ray_direction) {
-    // Returns vec2(distance, ray_steps_taken)
+    // Returns vec3(distance, ray_steps_taken)
 
     float depth = MIN_DISTANCE;
     int ray_steps = 0;
@@ -396,9 +386,8 @@ vec3 get_phong_for_scene(vec3 k_a, vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3
     const vec3 ambient = vec3(0.25);
     vec3 color = ambient * k_a;
     
-    vec3 light_position = eye;
-    vec3 light_intensity = vec3(0.4, 0.4, 0.4);
-    color += phong_for_light(k_d, k_s, alpha, p, eye, light_position, light_intensity);
+    vec3 light_intensity = vec3(1.0);
+    color += phong_for_light(k_d, k_s, alpha, p, eye, SUN_POSITION, light_intensity);
     
     return color;
 }
@@ -434,29 +423,45 @@ void main() {
     vec2 uv = gl_FragCoord.xy / iResolution.xy;
     if (distance(uv, vec2(0.5)) <= 0.001) {
         float DE_for_eye = scene_sdf(eye).w;
+        float de_colour = smoothstep(0.0, 1.0, DE_for_eye);
 
-        gl_FragColor = vec4(DE_for_eye, DE_for_eye, DE_for_eye, 1.0);
+        gl_FragColor = vec4(de_colour, de_colour / 10.0, de_colour / 100.0, 1.0);
         return;
     }
-
+    
     if (dist > MAX_DISTANCE - EPSILON) {
         // Didn't hit anything - GLOW
-        gl_FragColor = vec4(5.0 * vec3(ray_info.y), 1.0);
+        gl_FragColor = vec4(vec3(ray_info.y) * 1.5, 1.0);
         return;
     }
     
     // The closest point on the surface to the eyepoint along the view ray
     vec3 point = eye + dist * world_ray_direction;
+    
+    if (colouring_index == 0) {
+        // Orbit Trap
+        gl_FragColor = vec4(clamp(scene_sdf(point).xyz, 0.05, 0.95), 1.0);
+    
+    } else if (colouring_index == 1) {
+        // Point-Based Colouring
+        gl_FragColor = vec4(abs(normalize(point)), 1.0);
 
-    //gl_FragColor = vec4(abs(normalize(point)), 1.0);
-   // gl_FragColor = vec4(clamp(scene_sdf(point).xyz, 0.05, 0.95), 1.0);
-   // return; 
+    } else if (colouring_index == 2) {
+        // Based on the number of steps
+        gl_FragColor = vec4(vec3(ray_info.y), 1.0);
+
+    } else if (colouring_index == 3) {
+        // Phong Shading
+
+        vec3 K_a = vec3(0.2, 0.2, 0.2);
+        vec3 K_d = vec3(0.7, 0.2, 0.2);
+        vec3 K_s = vec3(1.0, 1.0, 1.0);
+        float shininess = 10.0;
+        
+        vec3 color = get_phong_for_scene(K_a, K_d, K_s, shininess, point, eye);
+        gl_FragColor = vec4(color, 1.0);
     
-    vec3 K_a = vec3(0.2, 0.2, 0.2);
-    vec3 K_d = vec3(0.7, 0.2, 0.2);
-    vec3 K_s = vec3(1.0, 1.0, 1.0);
-    float shininess = 10.0;
-    
-    vec3 color = get_phong_for_scene(K_a, K_d, K_s, shininess, point, eye);
-    gl_FragColor = vec4(color, 1.0);
+    } else {
+        gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+    }
 }

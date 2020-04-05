@@ -15,7 +15,11 @@ class PageContent extends React.Component {
         super(props);
 
         this.state = {
-            current_fractal: "Mandlebulb"
+            current_fractal: "Mandlebox",
+            current_colouring: "Orbit",
+            camera_position: [0, 0, 0],
+            camera_speed: 0,
+            time: 0
         };
     }
 
@@ -23,12 +27,24 @@ class PageContent extends React.Component {
         return (
             <Container fluid style={{ display: "flex" }}>
                 <Sidebar 
-                    on_fractal_change={value => {
-                        this.setState({ current_fractal: value })
-                    }}
+                    on_fractal_change={value => this.setState({ current_fractal: value })}
+                    on_colouring_change={value => this.setState({ current_colouring: value })}
+
+                    set_time={time => this.setState({ time: time })}
+                    camera_position={this.state.camera_position}
+                    camera_speed={this.state.camera_speed}
                 />
 
-                <WebGLCanvas fractal={this.state.current_fractal} />
+                <WebGLCanvas 
+                    fractal={this.state.current_fractal}
+                    colouring={this.state.current_colouring}
+                    time={this.state.time}
+
+                    update={data => this.setState({
+                        camera_position: data[0],
+                        camera_speed: data[1]
+                    })}
+                />
             </Container>
         );
     }

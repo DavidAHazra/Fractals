@@ -1,3 +1,11 @@
 #sidebar-menu {
     height: 100vh;
 }
+
+input[type="range"] {
+    width: 100%;
+}
+
+#time-label {
+    margin-bottom: 5px;
+}

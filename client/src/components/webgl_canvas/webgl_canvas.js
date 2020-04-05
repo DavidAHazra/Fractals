@@ -31,13 +31,15 @@ export default class WebGLCanvas extends React.Component {
         window.addEventListener('resize', () => this.resize_canvas(gl_context));
 
         // Render
-        this.renderer = new Renderer(this.canvas_ref.current, gl_context);
+        this.renderer = new Renderer(this.canvas_ref.current, gl_context, this.props.update);
         this.renderer.set_fractal(this.props.fractal);
         this.renderer.render_loop();
     }
 
     componentDidUpdate() {
         this.renderer.set_fractal(this.props.fractal);
+        this.renderer.set_colouring(this.props.colouring);
+        this.renderer.time = this.props.time;
     }
 
     resize_canvas(context) {

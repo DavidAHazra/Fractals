@@ -23,7 +23,8 @@ export default class Program {
             time: this.gl.getUniformLocation(this.program, 'iTime'),
             eye: this.gl.getUniformLocation(this.program, 'eye_position'),
             look_point: this.gl.getUniformLocation(this.program, 'look_point'),
-            fractal_index: this.gl.getUniformLocation(this.program, 'fractal_index')
+            fractal_index: this.gl.getUniformLocation(this.program, 'fractal_index'),
+            colouring_index: this.gl.getUniformLocation(this.program, 'colouring_index')
         };
     }
 

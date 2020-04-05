@@ -4,13 +4,12 @@ import { Vector3, normalize_vec3, deg_to_rad, add_vec3, mult_vec3, cross_vec3 } 
 export default class Camera {
     constructor() {
         this.UP_VECTOR = new Vector3(0, 1, 0);
-        this.MIN_SPEED = 0.001;
-
         this.speed = 0.5;
 
-        this.position = new Vector3(2, 2, 2);
-        this.pitch = -25;
+        this.position = new Vector3(8, 7, 8);
+        this.pitch = -30;
         this.yaw = 222;
+        this.min_speed = 0.0005;
 
         this.pressed_status = {
             'w': false,
@@ -43,8 +42,12 @@ export default class Camera {
     }
 
     set_speed(new_speed) {
-        const constant_modifier = 0.1;
+        const constant_modifier = 0.05;
+
         this.speed = new_speed * constant_modifier;
+        if (this.speed < this.min_speed) {
+            this.speed = this.min_speed;
+        }
     }
 
     get_look_direction() {
