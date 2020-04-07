@@ -7,13 +7,13 @@ import { Vector3 } from './maths';
 const FPS = 60;
 
 export default class Renderer {
-    constructor(canvas_element, gl_context, update_function) {
+    constructor(canvas_element, gl_context, vertex_source, fragment_source, update_function) {
         this.canvas = canvas_element;
         this.gl = gl_context;
 
         this.gui_update = update_function;
 
-        this.program = new Program(this.gl);
+        this.program = new Program(this.gl, vertex_source, fragment_source);
         this.image = new Square(this.gl);
         this.camera = new Camera();
         this.time = 0;
@@ -25,31 +25,53 @@ export default class Renderer {
         this.fractal_index = [
             "Mandlebox",
             "Mandlebulb",
+            "Menger",
+            "Snow",
             "Sierpinski",
-            "Tree"
+            "Tree",
+            "InfSphere"
 
         ].indexOf(fractal_name);
 
         if (previous_fractal !== this.fractal_index) {
-            this.camera.pitch = -30;
+            this.camera.pitch = -35;
             this.camera.yaw = 225;
 
             switch (this.fractal_index) {
                 case 0:
                     this.camera.position = new Vector3(8, 7, 8);
-                    this.camera.min_speed = 0.001;
+                    this.camera.min_speed = 0.005;
                     break;
 
                 case 1:
                     this.camera.position = new Vector3(2, 2, 2);
+                    this.camera.min_speed = 0.005;
                     break;
 
                 case 2:
                     this.camera.position = new Vector3(2, 2, 2);
+                    this.camera.min_speed = 0.001;
                     break;
 
                 case 3:
+                    this.camera.position = new Vector3(19, 13, -7);
+                    this.camera.min_speed = 0.1;
+                    this.camera.yaw = 160;
+                    break;
+
+                case 4:
+                    this.camera.position = new Vector3(2, 2, 2);
+                    this.camera.min_speed = 0.0005;
+                    break;
+
+                case 5:
                     this.camera.position = new Vector3(10, 10, 10);
+                    this.camera.min_speed = 0.005;
+                    break;
+
+                case 6: 
+                    this.camera.position = new Vector3(0, 0, 0);
+                    this.camera.min_speed = 0.1;
                     break;
             
                 default:

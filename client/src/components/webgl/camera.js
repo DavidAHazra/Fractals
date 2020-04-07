@@ -7,7 +7,7 @@ export default class Camera {
         this.speed = 0.5;
 
         this.position = new Vector3(8, 7, 8);
-        this.pitch = -30;
+        this.pitch = -35;
         this.yaw = 222;
         this.min_speed = 0.0005;
 

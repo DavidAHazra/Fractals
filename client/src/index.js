@@ -7,7 +7,7 @@ import Sidebar from './components/sidebar/sidebar'
 import WebGLCanvas from './components/webgl_canvas/webgl_canvas'
 
 
-
+import './index.css'
 
 
 class PageContent extends React.Component {
@@ -16,7 +16,7 @@ class PageContent extends React.Component {
 
         this.state = {
             current_fractal: "Mandlebox",
-            current_colouring: "Orbit",
+            current_colouring: "Steps",
             camera_position: [0, 0, 0],
             camera_speed: 0,
             time: 0
@@ -25,7 +25,7 @@ class PageContent extends React.Component {
 
     render() {
         return (
-            <Container fluid style={{ display: "flex" }}>
+            <Container fluid id="page-container">
                 <Sidebar 
                     on_fractal_change={value => this.setState({ current_fractal: value })}
                     on_colouring_change={value => this.setState({ current_colouring: value })}

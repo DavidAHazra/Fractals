@@ -1,18 +1,8 @@
-function get_file(path) {
-    let request = new XMLHttpRequest();
-    request.open('GET', path, false);
-    request.send();
-    return request.responseText;
-}
-
-
 export default class Program {
-    constructor(gl) {
+    constructor(gl, vertex_source, fragment_source) {
         this.gl = gl;
 
-        const _vertex_source = get_file('/shaders/standard.vert');
-        const _fragment_source = get_file('/shaders/standard.frag');
-        this.program = this._create_program(_vertex_source, _fragment_source);
+        this.program = this._create_program(vertex_source, fragment_source);
 
         this.attributes = {
             vertex_position: this.gl.getAttribLocation(this.program, 'vertex_position')    
@@ -33,18 +23,25 @@ export default class Program {
     // ============================
 
     _create_program(vertex_source, fragment_source) {
+
+
         const vertex_shader = this._load_shader(this.gl.VERTEX_SHADER, vertex_source);
         const fragment_shader = this._load_shader(this.gl.FRAGMENT_SHADER, fragment_source);
     
+        const s = (new Date()).getTime();
+
         const shader_program = this.gl.createProgram();
         this.gl.attachShader(shader_program, vertex_shader);
         this.gl.attachShader(shader_program, fragment_shader);
         this.gl.linkProgram(shader_program);
-    
+
         if (!this.gl.getProgramParameter(shader_program, this.gl.LINK_STATUS)) {
             throw 'Unable to initialize the shader program: ' + this.gl.getProgramInfoLog(shader_program);
         }
-        
+
+        const e = (new Date()).getTime();
+        console.log((e - s) / 1000 + "s");
+
         return shader_program;        
     }
 

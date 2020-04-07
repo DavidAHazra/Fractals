@@ -24,14 +24,6 @@ uniform int colouring_index;
 const vec3 SUN_POSITION = vec3(0.0, 15.0, 0.0);
 
 
-vec3 custom_modulus(vec3 vector, float operator) {
-    return vector - operator * floor(vector / operator);
-}
-
-float rand(float n) {
-    return fract(sin(n) * 43758.5453123);
-}
-
 float atan2(float y, float x) {
     if (x > 0.0) {
         return atan(y / x);
@@ -257,10 +249,10 @@ vec4 mandlebulb(vec3 point) {
         phi *= power;
 
         z = zr * vec3(
-                sin(theta) * cos(phi),
-                sin(phi) * sin(theta),
-                cos(theta)
-            );
+            sin(theta) * cos(phi),
+            sin(phi) * sin(theta),
+            cos(theta)
+        );
 
         z += point;
     }
@@ -271,7 +263,6 @@ vec4 mandlebulb(vec3 point) {
 
 vec4 mandlebox(vec3 point) {
     vec3 orbit = vec3(1e20);
-
     vec4 p = vec4(point, 1.0);
 
     for (int i = 0; i < 20; i++) {
@@ -291,6 +282,58 @@ vec4 mandlebox(vec3 point) {
 }
 
 
+vec4 infinite_spheres(vec3 point) {
+    vec3 orbit = vec3(1e20);
+    vec4 p = vec4(point, 1.0);
+
+    p.xyz = abs(mod(p.xyz, 2.0) - vec3(2.0));
+    orbit = min(orbit, p.xyz);
+
+    return vec4(orbit, sphere_sdf(p, vec3(1.0), 0.5));
+}
+
+vec4 menger_cube(vec3 point) {
+    vec3 orbit = vec3(1e20);
+    vec4 p = vec4(point, 1.0);
+
+    for (int i = 0; i < 20; ++i) {
+        p.xyz = abs(p.xyz);
+        mengerFold(p);
+
+        orbit = min(orbit, abs(p.xyz));
+
+        p *= 3.0;
+        p.xyz += vec3(-2.0, -2.0, 0.0);
+        p.z = -abs(p.z - 1.0) + 1.0;
+    }
+
+    return vec4(orbit, box_sdf(p, vec3(0.0), vec3(2.0)));
+}
+
+
+vec4 snow_stadium(vec3 point) {
+    vec3 orbit = vec3(1e20);
+    vec4 p = vec4(point, 1.0);
+
+    float angle = sin(iTime / 2.0);
+
+    for (int i = 0; i < 20; ++i) {
+        rotY(p, -angle);
+        sierpinskiFold(p);
+        rotX(p, angle);
+        mengerFold(p);
+
+        orbit = min(orbit, abs(p.xyz));
+
+        p *= 1.57;
+        p.xyz += vec3(-6.75, -4.0, -2.5);
+    }
+
+    return vec4(orbit, box_sdf(p, vec3(0.0), vec3(4.8)));
+}
+
+
+
 vec4 scene_sdf(vec3 point) {
     // Returns vec4(colour, ..., ..., distance)
 
@@ -298,7 +341,7 @@ vec4 scene_sdf(vec3 point) {
     // Scaling: sdf(point / scaling_factor) * scaling_factor
     // Rotation: new_point = (inverse_mat4(rotate_A(angle)) * vec4(point, 1.0)).xyz
 
-    float sun_sdf = sphere_sdf(vec4(point, 1.0), SUN_POSITION +vec3(0.0, 5.0, 0.0), 2.0);
+    float sun_sdf = sphere_sdf(vec4(point, 1.0), SUN_POSITION + vec3(0.0, 5.0, 0.0), 1.5);
 
     vec4 shape_sdf = vec4(0.0);
     if (fractal_index == 0) {
@@ -306,12 +349,21 @@ vec4 scene_sdf(vec3 point) {
 
     } else if (fractal_index == 1) {
         shape_sdf = mandlebulb(point);
-        
+
     } else if (fractal_index == 2) {
+        shape_sdf = menger_cube(point);
+
+    } else if (fractal_index == 3) {
+        shape_sdf = snow_stadium(point);
+        
+    } else if (fractal_index == 4) {
         shape_sdf = sierpinski_tetrahedron(point);
         
-    } else if (fractal_index == 3) {
+    } else if (fractal_index == 5) {
         shape_sdf = tree_block(point);
+
+    } else if (fractal_index == 6) {
+        shape_sdf = infinite_spheres(point);
     }
     
     vec4 final = vec4(shape_sdf.xyz, sdf_union(shape_sdf.w, sun_sdf));
@@ -320,7 +372,7 @@ vec4 scene_sdf(vec3 point) {
 
 // Ray-March Algorithm
 vec2 ray_march(vec3 eye, vec3 ray_direction) {
-    // Returns vec3(distance, ray_steps_taken)
+    // Returns vec3(distance, ray_steps_taken as a percentage)
 
     float depth = MIN_DISTANCE;
     int ray_steps = 0;
@@ -386,7 +438,7 @@ vec3 get_phong_for_scene(vec3 k_a, vec3 k_d, vec3 k_s, float alpha, vec3 p, vec3
     const vec3 ambient = vec3(0.25);
     vec3 color = ambient * k_a;
     
-    vec3 light_intensity = vec3(1.0);
+    const vec3 light_intensity = vec3(1.0);
     color += phong_for_light(k_d, k_s, alpha, p, eye, SUN_POSITION, light_intensity);
     
     return color;
@@ -401,12 +453,8 @@ mat4 get_view_matrix(vec3 eye, vec3 center, vec3 up) {
         vec4(s, 0.0),
         vec4(u, 0.0),
         vec4(-f, 0.0),
-        vec4(0.0, 0.0, 0.0, 1)
+        vec4(0.0, 0.0, 0.0, 1.0)
     );
-}
-
-float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
 }
 
 void main() {
@@ -440,7 +488,7 @@ void main() {
     
     if (colouring_index == 0) {
         // Orbit Trap
-        gl_FragColor = vec4(clamp(scene_sdf(point).xyz, 0.05, 0.95), 1.0);
+        gl_FragColor = vec4(smoothstep(0.05, 0.95, scene_sdf(point).xyz), 1.0);
     
     } else if (colouring_index == 1) {
         // Point-Based Colouring
